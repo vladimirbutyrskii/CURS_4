@@ -1,8 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
+
 from django.utils import timezone
-from datetime import datetime, timedelta
+
 
 User = get_user_model()
 

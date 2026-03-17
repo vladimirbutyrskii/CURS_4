@@ -45,6 +45,7 @@
                                class="form-control form-control-lg" 
                                placeholder="Придумайте пароль"
                                required>
+                        <!--
                         <div class="form-text">
                             <small>
                                 • Пароль должен содержать минимум 8 символов<br>
@@ -52,6 +53,7 @@
                                 • Не может состоять только из цифр
                             </small>
                         </div>
+                        -->
                     </div>
 
                     <div class="mb-3">
@@ -67,14 +69,14 @@
                             Пароли должны совпадать
                         </div>
                     </div>
-
+                    <!-- Это комментарий в HTML
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="agree_terms" required>
                         <label class="form-check-label" for="agree_terms">
                             Я согласен с <a href="#" class="text-decoration-none">условиями использования</a>
                         </label>
                     </div>
-
+                    -->
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-success btn-lg">
                             <i class="bi bi-check-circle-fill"></i>
@@ -84,7 +86,7 @@
                 </form>
 
                 <hr class="my-4">
-
+                 <!-- Это комментарий в HTML
                 <div class="text-center">
                     <p class="mb-0">
                         Уже есть аккаунт? 
@@ -94,6 +96,7 @@
                         </a>
                     </p>
                 </div>
+                -->
             </div>
         </div>
     </div>
@@ -137,31 +140,50 @@
         border: none;
         border-radius: 15px;
     }
-    
+
     .card-header {
         border-radius: 15px 15px 0 0 !important;
         background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%) !important;
+        color: #000000 !important;  /* Черный текст в заголовке */
     }
-    
+
+    .card-header h3,
+    .card-header p {
+        color: #000000 !important;  /* Черный текст для заголовков и параграфов в header */
+    }
+
     .btn-success {
         background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
         border: none;
         transition: transform 0.3s ease;
+        color: #000000 !important;  /* Черный текст на кнопке */
     }
-    
+
     .btn-success:hover {
         transform: translateY(-2px);
         background: linear-gradient(135deg, #8fd3f4 0%, #84fab0 100%);
+        color: #000000 !important;  /* Черный текст при наведении */
     }
-    
+
     .form-control:focus {
         border-color: #84fab0;
         box-shadow: 0 0 0 0.2rem rgba(132, 250, 176, 0.25);
     }
-    
+
     .form-check-input:checked {
         background-color: #84fab0;
         border-color: #84fab0;
     }
+
+    /* Дополнительно: черный текст для всех элементов внутри card-header */
+    .card-header * {
+        color: #000000 !important;
+    }
+
+    /* Если нужно изменить цвет текста на кнопке-ссылке */
+    .btn-link {
+        color: #000000;
+    }
 </style>
+
 {% endblock %}

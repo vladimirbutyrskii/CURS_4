@@ -27,7 +27,6 @@ class MessageForm(forms.ModelForm):
 
 class MailingForm(forms.ModelForm):
     """Форма для создания/редактирования рассылки"""
-
     class Meta:
         model = Mailing
         fields = ['start_time', 'end_time', 'message', 'recipients']
@@ -40,8 +39,15 @@ class MailingForm(forms.ModelForm):
     def __init__(self, user, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = user
-        self.fields['message'].queryset = Message.objects.filter(owner=user)
-        self.fields['recipients'].queryset = Client.objects.filter(owner=user)
+
+        if user.is_manager:
+            # Менеджеры видят все сообщения и клиентов
+            self.fields['message'].queryset = Message.objects.all()
+            self.fields['recipients'].queryset = Client.objects.all()
+        else:
+            # Пользователи - только свои
+            self.fields['message'].queryset = Message.objects.filter(owner=user)
+            self.fields['recipients'].queryset = Client.objects.filter(owner=user)
 
     def clean(self):
         cleaned_data = super().clean()

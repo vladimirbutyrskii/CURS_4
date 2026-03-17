@@ -8,8 +8,12 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h1>Рассылка #{{ mailing.id }}</h1>
             <div>
-                <a href="{% url 'mailing:send_mailing' mailing.pk %}" class="btn btn-success">📤 Отправить</a>
-                <a href="{% url 'mailing:mailing_update' mailing.pk %}" class="btn btn-warning">✏️ Редактировать</a>
+                {% if can_edit %}
+                    <a href="{% url 'mailing:send_mailing' mailing.pk %}" class="btn btn-success">📤 Отправить</a>
+                    <a href="{% url 'mailing:mailing_update' mailing.pk %}" class="btn btn-warning">✏️ Редактировать</a>
+                {% elif is_manager_viewing_foreign %}
+                    <span class="badge bg-info">Просмотр (только чтение)</span>
+                {% endif %}
                 <a href="{% url 'mailing:mailing_list' %}" class="btn btn-secondary">Назад</a>
             </div>
         </div>
@@ -22,6 +26,9 @@
             <div class="card-header">
                 <h5>Информация о рассылке</h5>
             </div>
+            {% if request.user.is_manager %}
+                <td>{{ mailing.owner.email }}</td>
+            {% endif %}
             <div class="card-body">
                 <p><strong>Статус:</strong> 
                     {% if mailing.status == 'created' %}

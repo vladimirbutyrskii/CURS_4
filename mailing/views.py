@@ -1,8 +1,9 @@
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.core.mail import send_mail
 from django.conf import settings
 from django.views.decorators.cache import cache_page
@@ -16,6 +17,29 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------
+def get_user_queryset(request, model):
+    """Вспомогательная функция для получения queryset с учетом прав"""
+    if request.user.is_manager:
+        # Менеджеры видят всё
+        return model.objects.all()
+    else:
+        # Обычные пользователи видят только своё
+        return model.objects.filter(owner=request.user)
+
+
+def check_object_permission(request, obj):
+    """Проверка прав на объект"""
+    if request.user.is_manager:
+        # Менеджеры могут просматривать, но не редактировать/удалять чужое
+        if obj.owner != request.user and request.method in ['POST', 'PUT', 'DELETE']:
+            raise PermissionDenied("Менеджеры не могут редактировать или удалять чужие данные")
+    else:
+        # Обычные пользователи работают только со своим
+        if obj.owner != request.user:
+            raise PermissionDenied("У вас нет прав на это действие")
+
+
 class MailingDetailView(LoginRequiredMixin, DetailView):
     """Детальный просмотр рассылки с автоматическим обновлением статуса"""
     model = Mailing
@@ -24,9 +48,32 @@ class MailingDetailView(LoginRequiredMixin, DetailView):
 
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
+        # Проверка прав доступа
+        if not self.request.user.is_manager and obj.owner != self.request.user:
+            raise PermissionDenied("У вас нет прав на просмотр этой рассылки")
+
+        # Менеджеры могут просматривать, но не редактировать
+        if self.request.user.is_manager and obj.owner != self.request.user:
+            # Добавляем флаг в контекст для шаблона
+            self.object = obj
+            self.readonly = True
+
         # Автоматически обновляем статус при просмотре
         obj.update_status()
         return obj
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Передаем в шаблон информацию о правах
+        context['can_edit'] = (
+                self.object.owner == self.request.user or
+                self.request.user.is_superuser
+        )
+        context['is_manager_viewing_foreign'] = (
+                self.request.user.is_manager and
+                self.object.owner != self.request.user
+        )
+        return context
 
 
 @login_required
@@ -65,7 +112,16 @@ def home(request):
 # CRUD для клиентов
 @login_required
 def client_list(request):
-    clients = Client.objects.filter(owner=request.user)
+    # Менеджеры видят всех, пользователи - только своих
+    if request.user.is_manager:
+        clients = Client.objects.all()
+    else:
+        clients = Client.objects.filter(owner=request.user)
+
+    # Добавляем информацию о владельце для менеджеров
+    if request.user.is_manager:
+        clients = clients.select_related('owner')
+
     return render(request, 'mailing/client_list.html', {'clients': clients})
 
 
@@ -78,7 +134,7 @@ def client_create(request):
             client.owner = request.user
             client.save()
             messages.success(request, 'Клиент успешно создан')
-            return redirect('client_list')
+            return redirect('mailing:client_list')
     else:
         form = ClientForm()
     return render(request, 'mailing/client_form.html', {'form': form, 'title': 'Создание клиента'})
@@ -87,12 +143,22 @@ def client_create(request):
 @login_required
 def client_update(request, pk):
     client = get_object_or_404(Client, pk=pk, owner=request.user)
+
+    # Проверка прав
+    if not request.user.is_manager and client.owner != request.user:
+        raise PermissionDenied("Вы можете редактировать только своих клиентов")
+
+    if request.user.is_manager and client.owner != request.user:
+        # Менеджеры не могут редактировать чужих
+        messages.error(request, "Менеджеры не могут редактировать чужих клиентов")
+        return redirect('mailing:client_list')
+
     if request.method == 'POST':
         form = ClientForm(request.POST, instance=client)
         if form.is_valid():
             form.save()
             messages.success(request, 'Клиент успешно обновлен')
-            return redirect('client_list')
+            return redirect('mailing:client_list')
     else:
         form = ClientForm(instance=client)
     return render(request, 'mailing/client_form.html', {'form': form, 'title': 'Редактирование клиента'})
@@ -101,17 +167,28 @@ def client_update(request, pk):
 @login_required
 def client_delete(request, pk):
     client = get_object_or_404(Client, pk=pk, owner=request.user)
+
+    if not request.user.is_manager and client.owner != request.user:
+        raise PermissionDenied("Вы можете удалять только своих клиентов")
+
+    if request.user.is_manager and client.owner != request.user:
+        messages.error(request, "Менеджеры не могут удалять чужих клиентов")
+        return redirect('mailing:client_list')
+
     if request.method == 'POST':
         client.delete()
         messages.success(request, 'Клиент успешно удален')
-        return redirect('client_list')
+        return redirect('mailing:client_list')
     return render(request, 'mailing/client_confirm_delete.html', {'client': client})
 
 
 # CRUD для сообщений
 @login_required
 def message_list(request):
-    messages_list = Message.objects.filter(owner=request.user)
+    if request.user.is_manager:
+        messages_list = Message.objects.all().select_related('owner')
+    else:
+        messages_list = Message.objects.filter(owner=request.user)
     return render(request, 'mailing/message_list.html', {'messages': messages_list})
 
 
@@ -124,7 +201,7 @@ def message_create(request):
             message.owner = request.user
             message.save()
             messages.success(request, 'Сообщение успешно создано')
-            return redirect('message_list')
+            return redirect('mailing:message_list')
     else:
         form = MessageForm()
     return render(request, 'mailing/message_form.html', {'form': form, 'title': 'Создание сообщения'})
@@ -138,7 +215,7 @@ def message_update(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Сообщение успешно обновлено')
-            return redirect('message_list')
+            return redirect('mailing:message_list')
     else:
         form = MessageForm(instance=message)
     return render(request, 'mailing/message_form.html', {'form': form, 'title': 'Редактирование сообщения'})
@@ -150,7 +227,7 @@ def message_delete(request, pk):
     if request.method == 'POST':
         message.delete()
         messages.success(request, 'Сообщение успешно удалено')
-        return redirect('message_list')
+        return redirect('mailing:message_list')
     return render(request, 'mailing/message_confirm_delete.html', {'message': message})
 
 
@@ -171,7 +248,7 @@ def mailing_create(request):
             mailing.save()
             form.save_m2m()  # Сохраняем связи многие-ко-многим
             messages.success(request, 'Рассылка успешно создана')
-            return redirect('mailing_list')
+            return redirect('mailing:mailing_list')
     else:
         form = MailingForm(request.user)
     return render(request, 'mailing/mailing_form.html', {'form': form, 'title': 'Создание рассылки'})
@@ -185,7 +262,7 @@ def mailing_update(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Рассылка успешно обновлена')
-            return redirect('mailing_list')
+            return redirect('mailing:mailing_list')
     else:
         form = MailingForm(request.user, instance=mailing)
     return render(request, 'mailing/mailing_form.html', {'form': form, 'title': 'Редактирование рассылки'})
@@ -197,7 +274,7 @@ def mailing_delete(request, pk):
     if request.method == 'POST':
         mailing.delete()
         messages.success(request, 'Рассылка успешно удалена')
-        return redirect('mailing_list')
+        return redirect('mailing:mailing_list')
     return render(request, 'mailing/mailing_confirm_delete.html', {'mailing': mailing})
 
 
@@ -211,7 +288,7 @@ def send_mailing(request, pk):
     now = timezone.now()
     if not (mailing.start_time <= now <= mailing.end_time):
         messages.error(request, 'Рассылку можно отправить только в период между датой начала и окончания')
-        return redirect('mailing_detail', pk=pk)
+        return redirect('mailing:mailing_detail', pk=pk)
 
     recipients = mailing.recipients.all()
     success_count = 0
@@ -253,7 +330,22 @@ def send_mailing(request, pk):
         request,
         f'Рассылка завершена. Успешно: {success_count}, Ошибок: {failed_count}'
     )
-    return redirect('mailing_detail', pk=pk)
+    return redirect('mailing:mailing_detail', pk=pk)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_manager)
+def toggle_mailing_active(request, pk):
+    """Отключение/включение рассылки (для менеджеров)"""
+    mailing = get_object_or_404(Mailing, pk=pk)
+
+    # Переключение статуса активности
+    mailing.is_active = not mailing.is_active
+    mailing.save()
+
+    status = 'включена' if mailing.is_active else 'отключена'
+    messages.success(request, f'Рассылка #{mailing.id} {status}')
+    return redirect('mailing:mailing_list')
 
 
 # Кешированный список клиентов
@@ -301,4 +393,3 @@ def mailing_statistics(request):
         cache.set(stats_cache_key, stats, 60 * 10)
 
     return render(request, 'mailing/statistics.html', {'stats': stats})
-
