@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Регистрация{% endblock %}
+
+{% block content %}ButSvet0507@
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0 rounded-lg mt-5">
+            <div class="card-header bg-success text-white text-center py-4">
+                <h3 class="mb-0">
+                    <i class="bi bi-person-plus-fill"></i>
+                    Регистрация
+                </h3>
+                <p class="mb-0 mt-2 small">Создайте новый аккаунт</p>
+            </div>
+            
+            <div class="card-body p-4">
+                <form method="post" action="{% url 'users:register' %}" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">
+                            <i class="bi bi-envelope-fill"></i>
+                            Email
+                        </label>
+                        <input type="email" name="email" id="id_email" 
+                               class="form-control form-control-lg" 
+                               placeholder="Введите ваш email"
+                               required>
+                        <div class="invalid-feedback">
+                            Пожалуйста, введите корректный email
+                        </div>
+                        <small class="text-muted">
+                            На этот email будет отправлено письмо с подтверждением
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_password1" class="form-label">
+                            <i class="bi bi-lock-fill"></i>
+                            Пароль
+                        </label>
+                        <input type="password" name="password1" id="id_password1" 
+                               class="form-control form-control-lg" 
+                               placeholder="Придумайте пароль"
+                               required>
+                        <!--
+                        <div class="form-text">
+                            <small>
+                                • Пароль должен содержать минимум 8 символов<br>
+                                • Не должен быть слишком простым<br>
+                                • Не может состоять только из цифр
+                            </small>
+                        </div>
+                        -->
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_password2" class="form-label">
+                            <i class="bi bi-lock-fill"></i>
+                            Подтверждение пароля
+                        </label>
+                        <input type="password" name="password2" id="id_password2" 
+                               class="form-control form-control-lg" 
+                               placeholder="Повторите пароль"
+                               required>
+                        <div class="invalid-feedback">
+                            Пароли должны совпадать
+                        </div>
+                    </div>
+                    <!-- Это комментарий в HTML
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="agree_terms" required>
+                        <label class="form-check-label" for="agree_terms">
+                            Я согласен с <a href="#" class="text-decoration-none">условиями использования</a>
+                        </label>
+                    </div>
+                    -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-check-circle-fill"></i>
+                            Зарегистрироваться
+                        </button>
+                    </div>
+                </form>
+
+                <hr class="my-4">
+                 <!-- Это комментарий в HTML
+                <div class="text-center">
+                    <p class="mb-0">
+                        Уже есть аккаунт? 
+                        <a href="{% url 'users:login' %}" class="text-decoration-none fw-bold">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            Войти
+                        </a>
+                    </p>
+                </div>
+                -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+<script>
+// Валидация формы
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                
+                // Дополнительная проверка совпадения паролей
+                var password1 = document.getElementById('id_password1')
+                var password2 = document.getElementById('id_password2')
+                
+                if (password1.value !== password2.value) {
+                    password2.setCustomValidity('Пароли не совпадают')
+                    event.preventDefault()
+                    event.stopPropagation()
+                } else {
+                    password2.setCustomValidity('')
+                }
+                
+                form.classList.add('was-validated')
+            }, false)
+        })
+})()
+</script>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 15px;
+    }
+
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+        background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%) !important;
+        color: #000000 !important;  /* Черный текст в заголовке */
+    }
+
+    .card-header h3,
+    .card-header p {
+        color: #000000 !important;  /* Черный текст для заголовков и параграфов в header */
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+        border: none;
+        transition: transform 0.3s ease;
+        color: #000000 !important;  /* Черный текст на кнопке */
+    }
+
+    .btn-success:hover {
+        transform: translateY(-2px);
+        background: linear-gradient(135deg, #8fd3f4 0%, #84fab0 100%);
+        color: #000000 !important;  /* Черный текст при наведении */
+    }
+
+    .form-control:focus {
+        border-color: #84fab0;
+        box-shadow: 0 0 0 0.2rem rgba(132, 250, 176, 0.25);
+    }
+
+    .form-check-input:checked {
+        background-color: #84fab0;
+        border-color: #84fab0;
+    }
+
+    /* Дополнительно: черный текст для всех элементов внутри card-header */
+    .card-header * {
+        color: #000000 !important;
+    }
+
+    /* Если нужно изменить цвет текста на кнопке-ссылке */
+    .btn-link {
+        color: #000000;
+    }
+</style>
+
+{% endblock %}

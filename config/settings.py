@@ -9,21 +9,25 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from django.urls import reverse_lazy
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-g2bl3wueudg%j9owyf(=p4*(d!fo4&$c*84i_op=9_w4zvb64m"
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = "False"  #os.getenv("DEBUG", False) == "True"
 
 ALLOWED_HOSTS = ["*"]
 
@@ -36,6 +40,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    'crispy_forms',
+    'crispy_bootstrap5',
 
     "mailing",
     "users",
@@ -70,17 +77,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.getenv("NAME"),
+        'USER': os.getenv("USER"),
+        'PASSWORD': os.getenv("PASSWORD"),
+        'HOST': os.getenv("HOST"),
+        'PORT': os.getenv("PORT")
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -100,20 +109,70 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
-
-TIME_ZONE = "UTC"
-
+LANGUAGE_CODE = 'ru-ru'
+TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
-
+USE_L10N = True
 USE_TZ = True
 
+# Добавьте это, если еще нет
+DEFAULT_CHARSET = 'utf-8'
+FILE_CHARSET = 'utf-8'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
+# Настройки crispy-forms
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+
+STATICFILES_DIRS = [BASE_DIR / 'static',]
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+AUTH_USER_MODEL = 'users.User'
+
+LOGIN_REDIRECT_URL = '/'
+LOGIN_URL = reverse_lazy('users:login')
+LOGOUT_REDIRECT_URL = '/'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  #  ???
+# В settings.py временно  EMAIL_BACKEND:
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# DEFAULT_FROM_EMAIL должен быть установлен
+# DEFAULT_FROM_EMAIL = 'noreply@example.com'  # или любое значение
+
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = os.getenv("EMAIL_PORT")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+# EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", False) == "True"
+# EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", False) == "True"
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "False").lower() == "true"
+EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() == "true"
+
+SERVER_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+CACHE_ENABLED = True
+if CACHE_ENABLED:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.getenv("REDIS_URL")
+        }
+    }
+
+CACHE_TTL = 60 * 15  # 15 минут
+
+

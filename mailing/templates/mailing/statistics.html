@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Статистика{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Статистика</h1>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Всего рассылок</div>
+            <div class="card-body">
+                <h5 class="card-title display-6">{{ stats.total_mailings }}</h5>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Активные рассылки</div>
+            <div class="card-body">
+                <h5 class="card-title display-6">{{ stats.active_mailings }}</h5>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-header">Получатели</div>
+            <div class="card-body">
+                <h5 class="card-title display-6">{{ stats.total_clients }}</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Попытки отправки</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Успешные:</strong> {{ stats.successful_attempts }}</p>
+                <p><strong>Неуспешные:</strong> {{ stats.failed_attempts }}</p>
+                <div class="progress">
+                    {% with total=stats.successful_attempts|add:stats.failed_attempts %}
+                        {% if total > 0 %}
+                            <div class="progress-bar bg-success" style="width: {% widthratio stats.successful_attempts total 100 %}%">
+                                Успешно ({% widthratio stats.successful_attempts total 100 %}%)
+                            </div>
+                            <div class="progress-bar bg-danger" style="width: {% widthratio stats.failed_attempts total 100 %}%">
+                                Ошибки ({% widthratio stats.failed_attempts total 100 %}%)
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

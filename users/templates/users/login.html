@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Вход в систему{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0 rounded-lg mt-5">
+            <div class="card-header bg-primary text-white text-center py-4">
+                <h3 class="mb-0">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Вход в систему
+                </h3>
+            </div>
+            
+            <div class="card-body p-4">
+                {% if form.errors %}
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        Неправильное имя пользователя или пароль. Пожалуйста, попробуйте снова.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endif %}
+
+                {% if next %}
+                    {% if user.is_authenticated %}
+                        <div class="alert alert-warning" role="alert">
+                            <i class="bi bi-shield-exclamation"></i>
+                            У вашего аккаунта нет доступа к этой странице. 
+                            Пожалуйста, войдите с другим аккаунтом.
+                        </div>
+                    {% endif %}
+                {% endif %}
+
+                <form method="post" action="{% url 'users:login' %}" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">
+                            <i class="bi bi-envelope-fill"></i>
+                            Email
+                        </label>
+                        <input type="email" name="username" id="id_username" 
+                               class="form-control form-control-lg" 
+                               placeholder="Введите ваш email"
+                               required autofocus>
+                        <div class="invalid-feedback">
+                            Пожалуйста, введите email
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_password" class="form-label">
+                            <i class="bi bi-lock-fill"></i>
+                            Пароль
+                        </label>
+                        <input type="password" name="password" id="id_password" 
+                               class="form-control form-control-lg" 
+                               placeholder="Введите пароль"
+                               required>
+                        <div class="invalid-feedback">
+                            Пожалуйста, введите пароль
+                        </div>
+                    </div>
+                    <!-- Это комментарий в HTML -->
+                    <!--
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+                        <label class="form-check-label" for="remember_me">
+                            <i class="bi bi-check-circle"></i>
+                            Запомнить меня
+                        </label>
+                    </div>
+                    -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            Войти
+                        </button>
+                    </div>
+
+                    <input type="hidden" name="next" value="{{ next }}">
+                </form>
+
+                <hr class="my-4">
+                <!-- Это комментарий в HTML            -->
+                <div class="text-center">
+                    <p class="mb-2">
+                        <a href="{% url 'users:password_reset' %}" class="text-decoration-none">
+                            <i class="bi bi-key-fill"></i>
+                            Забыли пароль?
+                        </a>
+                    </p>
+                    <p class="mb-0">
+                        Нет аккаунта? 
+                        <a href="{% url 'users:register' %}" class="text-decoration-none fw-bold">
+                            <i class="bi bi-person-plus-fill"></i>
+                            Зарегистрироваться
+                        </a>
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="card-footer bg-light text-muted text-center py-3">
+                <small>
+                    <i class="bi bi-shield-check"></i>
+                    Безопасный вход в систему
+                </small>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+// Валидация формы на стороне клиента
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+})()
+</script>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 15px;
+    }
+
+    .card-header {
+        border-radius: 15px 15px 0 0 !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        transition: transform 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    a {
+        color: #667eea;
+        transition: color 0.3s ease;
+    }
+
+    a:hover {
+        color: #764ba2;
+    }
+
+    .bi {
+        margin-right: 5px;
+    }
+
+    .alert {
+        border-radius: 10px;
+    }
+
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Рассылки{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Рассылки</h1>
+    <a href="{% url 'mailing:mailing_create' %}" class="btn btn-primary">📧 Создать рассылку</a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Тема письма</th>
+                <th>Статус</th>
+                <th>Начало</th>
+                <th>Окончание</th>
+                <th>Получателей</th>
+
+                {% if request.user.is_manager %}
+                    <th>Владелец</th>
+                {% endif %}
+
+                {% if request.user.is_manager %}
+                    <th>Активна</th>
+                {% endif %}
+
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for mailing in mailings %}
+            <tr>
+                <td>{{ mailing.id }}</td>
+                <td>{{ mailing.message.subject|truncatechars:50 }}</td>
+                <td>
+                    {% if mailing.status == 'created' %}
+                        <span class="badge bg-secondary">Создана</span>
+                    {% elif mailing.status == 'running' %}
+                        <span class="badge bg-success">Запущена</span>
+                    {% else %}
+                        <span class="badge bg-info">Завершена</span>
+                    {% endif %}
+                </td>
+                <td>{{ mailing.start_time|date:"d.m.Y H:i" }}</td>
+                <td>{{ mailing.end_time|date:"d.m.Y H:i" }}</td>
+                <td>{{ mailing.recipients.count }}</td>
+                {% if request.user.is_manager %}
+                    <td>{{ mailing.owner.email }}</td>
+                {% endif %}
+                {% if request.user.is_manager %}
+                    <td>
+                        {% if mailing.is_active %}
+                            <span class="badge bg-success">Да</span>
+                        {% else %}
+                            <span class="badge bg-danger">Нет</span>
+                        {% endif %}
+                    </td>
+                {% endif %}
+
+                <td>
+                    <!-- Кнопка просмотра для всех -->
+                    <a href="{% url 'mailing:mailing_detail' mailing.pk %}" class="btn btn-sm btn-info" title="Просмотр">👁️</a>
+
+                    <!-- Для владельцев или суперпользователей - полные права -->
+                    {% if mailing.owner == request.user or request.user.is_superuser %}
+                        <a href="{% url 'mailing:send_mailing' mailing.pk %}" class="btn btn-sm btn-success" title="Отправить">📤</a>
+                        <a href="{% url 'mailing:mailing_update' mailing.pk %}" class="btn btn-sm btn-warning" title="Редактировать">✏️</a>
+                        <a href="{% url 'mailing:mailing_delete' mailing.pk %}" class="btn btn-sm btn-danger" title="Удалить">🗑️</a>
+
+                    <!-- Для менеджеров (просматривающих чужие) - только просмотр и отключение -->
+                    {% elif request.user.is_manager %}
+                        <span class="text-muted small">(только чтение)</span>
+                        <!-- Кнопка отключения/включения рассылки для менеджеров -->
+                        <a href="{% url 'mailing:toggle_mailing' mailing.pk %}" class="btn btn-sm btn-warning" title="{% if mailing.is_active %}Отключить{% else %}Включить{% endif %}">
+                            {% if mailing.is_active %}🔴 Отключить{% else %}🟢 Включить{% endif %}
+                        </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{% if request.user.is_manager %}9{% else %}7{% endif %}" class="text-center">
+                    Нет рассылок
+                </td>
+            </tr>
+
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
